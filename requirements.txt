@@ -1,8 +1,9 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-streamlit
-transformers==4.44.2
+# versi stabil dan kompatibel untuk Streamlit Cloud
+streamlit==1.39.0
+transformers==4.43.1
 tokenizers==0.19.1
-torch
+torch==2.3.1
 pillow
 safetensors
-huggingface-hub
+huggingface-hub==0.23.2
+numpy<2.0
