@@ -1,7 +1,8 @@
 streamlit==1.39.0
 transformers==4.45.2
-torch==2.4.1
+torch==2.5.1
 pillow
 safetensors
 huggingface-hub==0.26.2
 numpy
+rich<14
