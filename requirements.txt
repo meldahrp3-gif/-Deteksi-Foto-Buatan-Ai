@@ -1,9 +1,7 @@
-# versi stabil dan kompatibel untuk Streamlit Cloud
 streamlit==1.39.0
-transformers==4.43.1
-tokenizers==0.19.1
-torch==2.3.1
+transformers==4.45.2
+torch==2.9.0
 pillow
 safetensors
-huggingface-hub==0.23.2
-numpy<2.0
+huggingface-hub==0.26.2
+numpy
