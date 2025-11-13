@@ -20,21 +20,19 @@ def add_bg_with_overlay(image_file):
         padding-bottom: 50px;
     }}
 
-    h1, h2, h3, h4, h5, h6, p, label, span {{
-        color: #ffffff !important;
-        text-shadow: 0 0 6px rgba(0,0,0,0.7);
+    h1, p {{
+        color: #fff !important;
+        text-shadow: 0 0 6px rgba(0,0,0,0.6);
     }}
 
     .stFileUploader {{
         background: rgba(255,255,255,0.9);
         backdrop-filter: blur(8px);
-        border: 2px solid rgba(0,0,0,0.3);
         border-radius: 15px;
         padding: 1rem;
         text-align: center;
     }}
 
-    /* Tombol di HP */
     button {{
         background-color: #1e1e1e !important;
         color: white !important;
@@ -47,7 +45,6 @@ def add_bg_with_overlay(image_file):
         background-color: #000 !important;
     }}
 
-    /* Gambar responsive */
     .image-container {{
         display: flex;
         justify-content: center;
@@ -56,7 +53,7 @@ def add_bg_with_overlay(image_file):
         width: 100%;
     }}
     .image-container img {{
-        max-width: 90vw; /* <= bikin muat di HP */
+        max-width: 90vw;
         height: auto;
         border-radius: 12px;
         box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -74,7 +71,6 @@ def add_bg_with_overlay(image_file):
     @media (max-width: 600px) {{
         h1 {{ font-size: 22px; }}
         p {{ font-size: 14px; }}
-        .stFileUploader {{ padding: 0.8rem; }}
     }}
     </style>
     """
@@ -93,27 +89,40 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# ===== Inisialisasi session_state =====
+if "image" not in st.session_state:
+    st.session_state.image = None
+if "result" not in st.session_state:
+    st.session_state.result = None
+
 # ===== Upload Gambar =====
 uploaded_file = st.file_uploader("📁 Pilih gambar...", type=["jpg", "jpeg", "png"])
 
-if uploaded_file:
-    image = Image.open(uploaded_file).convert("RGB")
+# Jika user upload gambar baru
+if uploaded_file is not None:
+    st.session_state.image = Image.open(uploaded_file).convert("RGB")
+    st.session_state.result = None  # reset hasil deteksi
+
+# Jika sudah ada gambar tersimpan
+if st.session_state.image is not None:
+    image = st.session_state.image
 
     st.markdown('<div class="image-container">', unsafe_allow_html=True)
     st.image(image, caption=None, use_column_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<p class="caption">🖼️ Gambar yang diupload</p>', unsafe_allow_html=True)
 
-    # ===== Tombol aksi =====
     col1, col2 = st.columns(2)
     with col1:
         detect_btn = st.button("🔍 Deteksi Gambar", use_container_width=True)
     with col2:
         clear_btn = st.button("❌ Hapus Gambar", use_container_width=True)
 
-    # Tombol hapus — refresh halaman
+    # Tombol hapus: reset state & refresh halaman
     if clear_btn:
-        st.experimental_rerun()
+        st.session_state.image = None
+        st.session_state.result = None
+        st.rerun()
 
     # Tombol deteksi
     if detect_btn:
@@ -123,20 +132,22 @@ if uploaded_file:
                     "image-classification",
                     model="NYUAD-ComNets/NYUAD_AI-generated_images_detector"
                 )
-                result = classifier(image)
+                st.session_state.result = classifier(image)
             except Exception as e:
                 st.error("❌ Gagal memuat model. Coba refresh halaman.")
                 st.stop()
 
-        st.subheader("📊 Hasil Deteksi:")
-        for r in result:
-            st.write(f"**{r['label'].upper()}** : {r['score']*100:.2f}%")
+# Tampilkan hasil kalau sudah ada
+if st.session_state.result:
+    st.subheader("📊 Hasil Deteksi:")
+    for r in st.session_state.result:
+        st.write(f"**{r['label'].upper()}** : {r['score']*100:.2f}%")
 
-        best = max(result, key=lambda x: x["score"])
-        st.success(
-            f"💡 Kesimpulan: Gambar ini kemungkinan **{best['label'].upper()}** "
-            f"dengan keyakinan {best['score']*100:.2f}%"
-        )
+    best = max(st.session_state.result, key=lambda x: x["score"])
+    st.success(
+        f"💡 Kesimpulan: Gambar ini kemungkinan **{best['label'].upper()}** "
+        f"dengan keyakinan {best['score']*100:.2f}%"
+    )
 
-else:
+elif st.session_state.image is None:
     st.info("⬆️ Silakan upload gambar terlebih dahulu untuk dianalisis.")
