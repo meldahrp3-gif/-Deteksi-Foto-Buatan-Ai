@@ -17,7 +17,6 @@ def add_bg_with_overlay(image_file):
         background-position: center;
         background-attachment: fixed;
         color: white;
-        padding-bottom: 50px;
     }}
 
     h1, h2, h3, h4, h5, h6, p, label, span {{
@@ -34,9 +33,8 @@ def add_bg_with_overlay(image_file):
         text-align: center;
     }}
 
-    /* Tombol di HP */
     button {{
-        background-color: #1e1e1e !important;
+        background-color: #222 !important;
         color: white !important;
         border-radius: 10px !important;
         font-weight: 600 !important;
@@ -47,7 +45,6 @@ def add_bg_with_overlay(image_file):
         background-color: #000 !important;
     }}
 
-    /* Gambar responsive */
     .image-container {{
         display: flex;
         justify-content: center;
@@ -56,7 +53,7 @@ def add_bg_with_overlay(image_file):
         width: 100%;
     }}
     .image-container img {{
-        max-width: 90vw; /* <= bikin muat di HP */
+        max-width: 90vw;
         height: auto;
         border-radius: 12px;
         box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -74,14 +71,13 @@ def add_bg_with_overlay(image_file):
     @media (max-width: 600px) {{
         h1 {{ font-size: 22px; }}
         p {{ font-size: 14px; }}
-        .stFileUploader {{ padding: 0.8rem; }}
     }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
 # ===== Background =====
-add_bg_with_overlay("bg.jpg")
+add_bg_with_overlay("dhwi.PNG")
 
 # ===== Judul =====
 st.markdown(
@@ -100,32 +96,22 @@ if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
 
     st.markdown('<div class="image-container">', unsafe_allow_html=True)
-    st.image(image, caption=None, use_column_width=True)
+    st.image(image, use_column_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<p class="caption">🖼️ Gambar yang diupload</p>', unsafe_allow_html=True)
 
-    # ===== Tombol aksi =====
-    col1, col2 = st.columns(2)
-    with col1:
-        detect_btn = st.button("🔍 Deteksi Gambar", use_container_width=True)
-    with col2:
-        clear_btn = st.button("❌ Hapus Gambar", use_container_width=True)
-
-    # Tombol hapus — refresh halaman
-    if clear_btn:
-        st.experimental_rerun()
-
-    # Tombol deteksi
-    if detect_btn:
+    # ===== Tombol Deteksi =====
+    if st.button("🔍 Deteksi Gambar", use_container_width=True):
         with st.spinner("⏳ Mendeteksi gambar... harap tunggu..."):
             try:
+                # Model lebih akurat
                 classifier = pipeline(
                     "image-classification",
-                    model="NYUAD-ComNets/NYUAD_AI-generated_images_detector"
+                    model="umm-maybe/AI-image-detector"
                 )
                 result = classifier(image)
             except Exception as e:
-                st.error("❌ Gagal memuat model. Coba refresh halaman.")
+                st.error("❌ Gagal memuat model. Silakan refresh dan coba lagi.")
                 st.stop()
 
         st.subheader("📊 Hasil Deteksi:")
