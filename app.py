@@ -17,6 +17,7 @@ def add_bg_with_overlay(image_file):
         background-position: center;
         background-attachment: fixed;
         color: white;
+        padding-bottom: 50px;
     }}
 
     h1, h2, h3, h4, h5, h6, p, label, span {{
@@ -33,8 +34,9 @@ def add_bg_with_overlay(image_file):
         text-align: center;
     }}
 
+    /* Tombol di HP */
     button {{
-        background-color: #222 !important;
+        background-color: #1e1e1e !important;
         color: white !important;
         border-radius: 10px !important;
         font-weight: 600 !important;
@@ -45,6 +47,7 @@ def add_bg_with_overlay(image_file):
         background-color: #000 !important;
     }}
 
+    /* Gambar responsive */
     .image-container {{
         display: flex;
         justify-content: center;
@@ -53,7 +56,7 @@ def add_bg_with_overlay(image_file):
         width: 100%;
     }}
     .image-container img {{
-        max-width: 90vw;
+        max-width: 90vw; /* <= bikin muat di HP */
         height: auto;
         border-radius: 12px;
         box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -71,13 +74,14 @@ def add_bg_with_overlay(image_file):
     @media (max-width: 600px) {{
         h1 {{ font-size: 22px; }}
         p {{ font-size: 14px; }}
+        .stFileUploader {{ padding: 0.8rem; }}
     }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
 # ===== Background =====
-add_bg_with_overlay("dhwi.PNG")
+add_bg_with_overlay("bg.jpg")
 
 # ===== Judul =====
 st.markdown(
@@ -96,33 +100,43 @@ if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
 
     st.markdown('<div class="image-container">', unsafe_allow_html=True)
-    st.image(image, use_column_width=True)
+    st.image(image, caption=None, use_column_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<p class="caption">🖼️ Gambar yang diupload</p>', unsafe_allow_html=True)
 
-    # ===== Tombol Deteksi =====
-    if st.button("🔍 Deteksi Gambar", use_container_width=True):
+    # ===== Tombol aksi =====
+    col1, col2 = st.columns(2)
+    with col1:
+        detect_btn = st.button("🔍 Deteksi Gambar", use_container_width=True)
+    with col2:
+        clear_btn = st.button("❌ Hapus Gambar", use_container_width=True)
+
+    # Tombol hapus — refresh halaman
+    if clear_btn:
+        st.experimental_rerun()
+
+    # Tombol deteksi
+    if detect_btn:
         with st.spinner("⏳ Mendeteksi gambar... harap tunggu..."):
             try:
                 classifier = pipeline(
                     "image-classification",
-                    model="umm-maybe/AI-image-detector"
+                    model="NYUAD-ComNets/NYUAD_AI-generated_images_detector"
                 )
                 result = classifier(image)
             except Exception as e:
-                st.error("❌ Gagal memuat model. Silakan refresh dan coba lagi.")
+                st.error("❌ Gagal memuat model. Coba refresh halaman.")
                 st.stop()
 
-        # ===== Hasil hanya untuk DALLE & REAL =====
         st.subheader("📊 Hasil Deteksi:")
-        filtered = [r for r in result if r['label'].upper() in ['DALLE', 'REAL']]
-        if filtered:
-            for r in filtered:
-                st.write(f"**{r['label'].upper()}** : {r['score']*100:.2f}%")
+        for r in result:
+            st.write(f"**{r['label'].upper()}** : {r['score']*100:.2f}%")
 
-            best = max(filtered, key=lambda x: x["score"])
-            st.success(
-                f"💡 Kesimpulan: Gambar ini kemungkinan **{best['label'].upper()}** "
-                f"dengan keyakinan {best['score']*100:.2f}%"
-            )
-        e
+        best = max(result, key=lambda x: x["score"])
+        st.success(
+            f"💡 Kesimpulan: Gambar ini kemungkinan **{best['label'].upper()}** "
+            f"dengan keyakinan {best['score']*100:.2f}%"
+        )
+
+else:
+    st.info("⬆️ Silakan upload gambar terlebih dahulu untuk dianalisis.")
