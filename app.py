@@ -104,7 +104,6 @@ if uploaded_file:
     if st.button("🔍 Deteksi Gambar", use_container_width=True):
         with st.spinner("⏳ Mendeteksi gambar... harap tunggu..."):
             try:
-                # Model lebih akurat
                 classifier = pipeline(
                     "image-classification",
                     model="umm-maybe/AI-image-detector"
@@ -114,15 +113,16 @@ if uploaded_file:
                 st.error("❌ Gagal memuat model. Silakan refresh dan coba lagi.")
                 st.stop()
 
+        # ===== Hasil hanya untuk DALLE & REAL =====
         st.subheader("📊 Hasil Deteksi:")
-        for r in result:
-            st.write(f"**{r['label'].upper()}** : {r['score']*100:.2f}%")
+        filtered = [r for r in result if r['label'].upper() in ['DALLE', 'REAL']]
+        if filtered:
+            for r in filtered:
+                st.write(f"**{r['label'].upper()}** : {r['score']*100:.2f}%")
 
-        best = max(result, key=lambda x: x["score"])
-        st.success(
-            f"💡 Kesimpulan: Gambar ini kemungkinan **{best['label'].upper()}** "
-            f"dengan keyakinan {best['score']*100:.2f}%"
-        )
-
-else:
-    st.info("⬆️ Silakan upload gambar terlebih dahulu untuk dianalisis.")
+            best = max(filtered, key=lambda x: x["score"])
+            st.success(
+                f"💡 Kesimpulan: Gambar ini kemungkinan **{best['label'].upper()}** "
+                f"dengan keyakinan {best['score']*100:.2f}%"
+            )
+        e
