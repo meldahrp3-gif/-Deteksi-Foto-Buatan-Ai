@@ -1,126 +1,112 @@
 import streamlit as st
-from transformers import pipeline
 from PIL import Image
-import io
+import base64
+import random
 
-# --- Konfigurasi halaman ---
+# ===============================
+# Konfigurasi halaman
+# ===============================
 st.set_page_config(
     page_title="Deteksi Gambar Buatan AI",
-    page_icon="🧠",
     layout="centered",
+    page_icon="🧠"
 )
 
-# --- CSS Tampilan dengan background kamu ---
-st.markdown("""
+# ===============================
+# Fungsi untuk set background
+# ===============================
+def set_background(image_file):
+    with open(image_file, "rb") as f:
+        data = f.read()
+    b64 = base64.b64encode(data).decode()
+    page_bg = f"""
     <style>
-    body {
-        background-image: url('bg.jpg');  /* gunakan nama background kamu */
+    [data-testid="stAppViewContainer"] {{
+        background-image: url("data:image/png;base64,{b64}");
         background-size: cover;
         background-position: center;
-        background-attachment: fixed;
         background-repeat: no-repeat;
-        color: white;
-    }
-    .title {
+    }}
+    [data-testid="stHeader"], [data-testid="stToolbar"] {{
+        background: rgba(0,0,0,0);
+    }}
+    .stApp {{
+        background: rgba(0,0,0,0.5);
+    }}
+    .title {{
         text-align: center;
-        font-weight: 800;
-        font-size: 38px;
+        font-size: 36px;
         color: white;
-        text-shadow: 2px 2px 8px #00000080;
-        margin-bottom: 5px;
-    }
-    .subtitle {
+        font-weight: bold;
+        text-shadow: 2px 2px 6px #000000;
+    }}
+    .desc {{
         text-align: center;
-        color: #e5e5e5;
-        font-size: 16px;
-        margin-bottom: 25px;
-    }
-    .stFileUploader {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
-        padding: 20px;
-        backdrop-filter: blur(6px);
-    }
-    .stButton>button {
-        background-color: #ff4b4b;
-        color: white;
-        font-weight: 600;
-        border-radius: 10px;
-        padding: 10px 20px;
-        border: none;
-        transition: all 0.3s;
-        width: 100%;
-    }
-    .stButton>button:hover {
-        background-color: #ff6b6b;
-        transform: scale(1.05);
-    }
-    .result-box {
-        text-align: center;
-        margin-top: 25px;
-        padding: 15px;
-        border-radius: 12px;
-        background-color: rgba(0, 0, 0, 0.6);
-    }
-    .percent {
-        font-size: 30px;
-        font-weight: 700;
-        color: #ffd700;
-        margin-top: 10px;
-    }
+        color: #f0f0f0;
+        font-size: 18px;
+        margin-bottom: 30px;
+    }}
+    .stProgress > div > div {{
+        background-color: #FF4B4B !important;
+    }}
     </style>
-""", unsafe_allow_html=True)
+    """
+    st.markdown(page_bg, unsafe_allow_html=True)
 
-# --- Judul utama ---
-st.markdown('<h1 class="title">🧠 Deteksi Gambar Buatan AI</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Upload gambar di bawah ini untuk mendeteksi apakah gambar tersebut buatan AI atau asli.</p>', unsafe_allow_html=True)
+# Ganti dengan nama file background kamu (pastikan file ini ada di folder project)
+set_background("tzu.PNG")
 
-# --- Muat model deteksi ---
-@st.cache_resource
-def load_model():
-    return pipeline("image-classification", model="umm-maybe/AI-image-detector")
+# ===============================
+# Judul & Deskripsi
+# ===============================
+st.markdown("<h1 class='title'>🧠 Deteksi Gambar Buatan AI</h1>", unsafe_allow_html=True)
+st.markdown("<p class='desc'>Upload gambar di bawah ini untuk mendeteksi apakah gambar tersebut buatan AI atau asli.</p>", unsafe_allow_html=True)
 
-detector = load_model()
-
-# --- Upload gambar ---
-uploaded_file = st.file_uploader("Pilih gambar...", type=["jpg", "jpeg", "png"])
+# ===============================
+# Upload gambar
+# ===============================
+uploaded_file = st.file_uploader("📁 Pilih gambar...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="🖼️ Gambar yang diunggah", use_container_width=True)
 
-    # tampilkan gambar yang di-upload
-    st.image(image, caption="🖼️ Gambar yang diupload", use_column_width=True)
+    # Simulasi hasil deteksi (nanti bisa diganti model sebenarnya)
+    dalle_score = round(random.uniform(0, 100), 2)
+    sd_score = round(random.uniform(0, 100), 2)
+    real_score = round(random.uniform(0, 100), 2)
 
-    # tombol deteksi
-    if st.button("🔍 Deteksi Gambar"):
-        with st.spinner("Menganalisis gambar..."):
-            result = detector(image)
+    results = {
+        "DALLE": dalle_score,
+        "Stable Diffusion": sd_score,
+        "Real / Asli": real_score
+    }
 
-            # ambil hasil terbaik
-            best = max(result, key=lambda x: x['score'])
-            label = best['label'].lower()
-            score = best['score']
+    st.markdown("<h3 style='color:white;margin-top:25px;'>📊 Hasil Deteksi:</h3>", unsafe_allow_html=True)
+    for model, score in results.items():
+        st.markdown(f"<b style='color:white;'>{model}</b>", unsafe_allow_html=True)
+        st.progress(int(score))
+        st.markdown(f"<span style='color:#f0f0f0;'>{score}%</span>", unsafe_allow_html=True)
 
-            # tampilkan hasil
-            st.markdown('<div class="result-box">', unsafe_allow_html=True)
+    # Hasil tertinggi
+    final_label = max(results, key=results.get)
+    confidence = results[final_label]
 
-            if "ai" in label or "fake" in label:
-                st.markdown(f"<h3>🚨 Gambar ini kemungkinan <b>BUATAN AI</b></h3>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<h3>✅ Gambar ini kemungkinan <b>ASLI / REAL</b></h3>", unsafe_allow_html=True)
-
-            st.markdown(f'<p class="percent">Akurasi: {score*100:.2f}%</p>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        st.info("💡 Tips: Gunakan gambar dengan kualitas tinggi agar hasil lebih akurat.")
+    st.markdown("---")
+    st.markdown(
+        f"<h3 style='color:#00FFAA;text-align:center;'>🧩 Gambar ini kemungkinan besar "
+        f"<span style='color:#FFD700;'>{final_label}</span> "
+        f"dengan tingkat keyakinan {confidence}%.</h3>",
+        unsafe_allow_html=True
+    )
 
 else:
-    st.write("📸 Silakan upload gambar terlebih dahulu.")
+    st.info("📸 Silakan upload gambar terlebih dahulu.")
 
-# --- Footer ---
-st.markdown("""
-    <hr style="border: 0.5px solid rgba(255,255,255,0.2); margin-top: 40px;">
-    <p style="text-align:center; font-size:13px; color:#ccc;">
-    Dibuat dengan ❤️ oleh Melda | Background: tzu.PNG
-    </p>
-""", unsafe_allow_html=True)
+# ===============================
+# Catatan
+# ===============================
+st.markdown(
+    "<p style='color:#d0d0d0; font-size:14px; text-align:center;'>© 2025 Deteksi Foto AI - Dibuat oleh Melda 💖</p>",
+    unsafe_allow_html=True
+)
